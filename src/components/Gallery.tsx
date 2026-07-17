@@ -30,14 +30,20 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
       className="group flex flex-col"
     >
       <div className={`w-full aspect-[4/3] bg-[#1E1B1A] relative overflow-hidden rounded-lg mb-5 ${!isLoaded ? 'animate-pulse' : ''}`}>
-        <img
-          src={item.imageUrl}
-          alt={item.title}
-          loading="lazy"
-          decoding="async"
-          className={`w-full h-full object-cover transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-          onLoad={() => setIsLoaded(true)}
-        />
+        <picture>
+          <source srcSet={item.imageUrl.replace(/\.(png|jpg|jpeg)$/i, '.webp')} type="image/webp" />
+          <img
+            src={item.imageUrl}
+            alt={item.title}
+            loading="lazy"
+            decoding="async"
+            width={800}
+            height={600}
+            fetchPriority={isLoaded ? 'low' : 'high'}
+            className={`w-full h-full object-cover transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setIsLoaded(true)}
+          />
+        </picture>
         <div className="absolute inset-0 bg-[#151312]/10 group-hover:bg-transparent transition-colors duration-500 z-20 pointer-events-none" />
       </div>
       
@@ -231,7 +237,7 @@ Custom Dimensions/Notes: ${formData.notes}`;
                   
                   <button
                     type="submit"
-                    className="w-full mt-4 flex items-center justify-center gap-3 bg-[#C97B63] text-[#C97B63] py-4 rounded-sm font-medium uppercase tracking-widest text-sm hover:bg-[#C97B63]/90 transition-colors group"
+                    className="w-full mt-4 flex items-center justify-center gap-3 bg-[#C97B63] text-[#1E1B1A] py-4 rounded-sm font-medium uppercase tracking-widest text-sm hover:bg-[#C97B63]/90 transition-colors group"
                   >
                     Send Email Inquiry
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />

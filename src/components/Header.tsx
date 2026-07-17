@@ -43,7 +43,7 @@ export default function Header() {
           ))}
           <a
             href="#quote"
-            className="border border-[#F9F6F0]/20 text-[#F9F6F0] px-6 py-2 rounded-sm text-xs uppercase tracking-widest font-medium hover:bg-[#C97B63] hover:text-[#C97B63] transition-all"
+            className="border border-[#F9F6F0]/20 text-[#F9F6F0] px-6 py-2 rounded-sm text-xs uppercase tracking-widest font-medium hover:bg-[#C97B63] hover:text-[#1E1B1A] transition-all"
           >
             Book Consultation
           </a>
