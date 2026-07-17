@@ -1,0 +1,6 @@
+{
+  "name": "Biruk Teferi Woodworks",
+  "description": "Premium custom furniture and woodwork portfolio for Biruk Teferi based in Addis Ababa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
