@@ -17,8 +17,17 @@ const items: GalleryItem[] = [
 
 const categories = ['All', 'TV Stands & Consoles', 'Tables', 'Shelving & Storage'];
 
-const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryItem) => void }> = ({ item, handleRequest }) => {
+const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryItem) => void, index: number }> = ({ item, handleRequest, index }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const isPriority = index < 2; // first two cards are above the fold
+
+  // responsive srcset based on a filename convention (image-400.webp, image-800.webp, ...)
+  const extMatch = item.imageUrl.match(/\.(png|jpe?g)$/i);
+  const ext = extMatch ? extMatch[1] : 'jpg';
+  const base = extMatch ? item.imageUrl.replace(/\.(png|jpe?g)$/i, '') : item.imageUrl;
+  const webpSrcSet = `${base}-400.webp 400w, ${base}-800.webp 800w, ${base}-1200.webp 1200w`;
+  const fallbackSrcSet = `${base}-400.${ext} 400w, ${base}-800.${ext} 800w, ${base}-1200.${ext} 1200w`;
+  const sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 
   return (
     <motion.div
@@ -29,21 +38,28 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="group flex flex-col"
     >
-      <div className={`w-full aspect-[4/3] bg-[#1E1B1A] relative overflow-hidden rounded-lg mb-5 ${!isLoaded ? 'animate-pulse' : ''}`}>
+      <div className={`w-full aspect-[4/3] relative overflow-hidden rounded-lg mb-5`}>
         <picture>
-          <source srcSet={item.imageUrl.replace(/\.(png|jpg|jpeg)$/i, '.webp')} type="image/webp" />
+          <source srcSet={webpSrcSet} type="image/webp" sizes={sizes} />
           <img
             src={item.imageUrl}
             alt={item.title}
-            loading="lazy"
+            loading={isPriority ? 'eager' : 'lazy'}
             decoding="async"
-            width={800}
-            height={600}
-            fetchPriority={isLoaded ? 'low' : 'high'}
+            width={1200}
+            height={900}
+            fetchPriority={isPriority ? 'high' : (isLoaded ? 'low' : 'auto')}
+            srcSet={fallbackSrcSet}
+            sizes={sizes}
             className={`w-full h-full object-cover transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={() => setIsLoaded(true)}
           />
         </picture>
+
+        {/* LQIP / skeleton overlay that matches the card aspect and pulses until image loads */}
+        <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${isLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'} animate-pulse bg-stone-900`} />
+
+        {/* subtle decorative overlay that responds to hover */}
         <div className="absolute inset-0 bg-[#151312]/10 group-hover:bg-transparent transition-colors duration-500 z-20 pointer-events-none" />
       </div>
       
@@ -82,6 +98,32 @@ export default function Gallery() {
   const filteredItems = items.filter(
     (item) => filter === 'All' || item.category === filter
   );
+
+  // Preload the first two above-the-fold images to improve first paint
+  useEffect(() => {
+    const preloads: HTMLLinkElement[] = [];
+    filteredItems.slice(0, 2).forEach((it) => {
+      // try a webp variant first (harmless if it 404s) then the original
+      const webpHref = it.imageUrl.replace(/\.(png|jpe?g)$/i, '.webp');
+      const l1 = document.createElement('link');
+      l1.rel = 'preload';
+      l1.as = 'image';
+      l1.href = webpHref;
+      document.head.appendChild(l1);
+      preloads.push(l1);
+
+      const l2 = document.createElement('link');
+      l2.rel = 'preload';
+      l2.as = 'image';
+      l2.href = it.imageUrl;
+      document.head.appendChild(l2);
+      preloads.push(l2);
+    });
+
+    return () => {
+      preloads.forEach((l) => l.parentNode && l.parentNode.removeChild(l));
+    };
+  }, [filteredItems]);
 
   const handleRequest = (item: GalleryItem) => {
     setInquiryItem(item);
@@ -152,8 +194,8 @@ Custom Dimensions/Notes: ${formData.notes}`;
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
       >
         <AnimatePresence mode="popLayout">
-          {filteredItems.map((item) => (
-            <GalleryCard key={item.id} item={item} handleRequest={handleRequest} />
+          {filteredItems.map((item, idx) => (
+            <GalleryCard key={item.id} item={item} handleRequest={handleRequest} index={idx} />
           ))}
         </AnimatePresence>
       </motion.div>
