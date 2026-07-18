@@ -1,4 +1,11 @@
-import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
+/// <reference types="react" />
+import React, {
+  useState,
+  useEffect,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactElement,
+} from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, X } from 'lucide-react';
 import type { GalleryItem } from '../types';
@@ -25,7 +32,7 @@ interface GalleryCardProps {
   onLoad: () => void;
 }
 
-function GalleryCard({ item, handleRequest, index, isLoaded, onLoad }: GalleryCardProps): JSX.Element {
+function GalleryCard({ item, handleRequest, index, isLoaded, onLoad }: GalleryCardProps): ReactElement {
   const isPriority = index < 2; // first two cards are above the fold
 
   const extMatch = item.imageUrl.match(/\.(png|jpe?g)$/i);
@@ -90,7 +97,7 @@ function GalleryCard({ item, handleRequest, index, isLoaded, onLoad }: GalleryCa
   );
 }
 
-export default function Gallery(): JSX.Element {
+export default function Gallery(): ReactElement {
   const [filter, setFilter] = useState('All');
   const [inquiryItem, setInquiryItem] = useState<GalleryItem | null>(null);
 
@@ -106,11 +113,13 @@ export default function Gallery(): JSX.Element {
 
   const [loadedItems, setLoadedItems] = useState<Record<string, boolean>>({});
 
-  const handleImageLoad = (id: string) => {
-    setLoadedItems((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+  const handleImageLoad = (id: string): void => {
+    setLoadedItems((prev: Record<string, boolean>) =>
+      prev[id] ? prev : { ...prev, [id]: true }
+    );
   };
 
-  const isItemLoaded = (id: string) => !!loadedItems[id];
+  const isItemLoaded = (id: string): boolean => !!loadedItems[id];
 
   // Preload the first two above-the-fold images to improve first paint
   useEffect(() => {
@@ -145,7 +154,10 @@ export default function Gallery(): JSX.Element {
   const handleFieldChange = (field: keyof typeof formData) => (
     e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>
   ): void => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    setFormData((prev: { name: string; phone: string; notes: string }) => ({
+      ...prev,
+      [field]: e.target.value,
+    }));
   };
 
   const handleModalSubmit = (e: FormEvent<HTMLFormElement>): void => {
