@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, X } from 'lucide-react';
-import { GalleryItem } from '../types';
+import type { GalleryItem } from '../types';
 
 const items: GalleryItem[] = [
   { id: '1', title: 'The Horizon Console', category: 'TV Stands & Consoles', woodType: 'Dark Walnut', imageUrl: '/number-4.jpg' },
@@ -17,10 +17,17 @@ const items: GalleryItem[] = [
 
 const categories = ['All', 'TV Stands & Consoles', 'Tables', 'Shelving & Storage'];
 
-const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryItem) => void, index: number, isLoaded: boolean, onLoad: () => void }> = ({ item, handleRequest, index, isLoaded, onLoad }) => {
+interface GalleryCardProps {
+  item: GalleryItem;
+  handleRequest: (item: GalleryItem) => void;
+  index: number;
+  isLoaded: boolean;
+  onLoad: () => void;
+}
+
+function GalleryCard({ item, handleRequest, index, isLoaded, onLoad }: GalleryCardProps): JSX.Element {
   const isPriority = index < 2; // first two cards are above the fold
 
-  // responsive srcset based on a filename convention (image-400.webp, image-800.webp, ...)
   const extMatch = item.imageUrl.match(/\.(png|jpe?g)$/i);
   const ext = extMatch ? extMatch[1] : 'jpg';
   const base = extMatch ? item.imageUrl.replace(/\.(png|jpe?g)$/i, '') : item.imageUrl;
@@ -38,7 +45,6 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
       className="group flex flex-col"
     >
       <div className="w-full aspect-[4/3] relative overflow-hidden rounded-lg mb-5 bg-stone-900">
-        {/* Solid dark skeleton background while the image loads */}
         <div className="absolute inset-0 bg-stone-900" />
 
         <picture className="absolute inset-0 z-20">
@@ -58,7 +64,6 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
           />
         </picture>
 
-        {/* subtle decorative overlay on top of the loaded image */}
         <div className="absolute inset-0 bg-[#151312]/10 group-hover:bg-transparent transition-colors duration-500 z-30 pointer-events-none" />
       </div>
       
@@ -72,6 +77,7 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
         
         <div className="mt-auto pt-2">
           <button 
+            type="button"
             onClick={() => handleRequest(item)}
             className="flex items-center gap-2 text-xs uppercase tracking-widest font-medium text-[#E8E2DC] group-hover:text-[#C97B63] transition-colors"
           >
@@ -84,18 +90,18 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
   );
 }
 
-export default function Gallery() {
+export default function Gallery(): JSX.Element {
   const [filter, setFilter] = useState('All');
   const [inquiryItem, setInquiryItem] = useState<GalleryItem | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{ name: string; phone: string; notes: string }>({
     name: '',
     phone: '',
     notes: ''
   });
 
-  const filteredItems = items.filter(
-    (item) => filter === 'All' || item.category === filter
+  const filteredItems: GalleryItem[] = items.filter(
+    (item: GalleryItem) => filter === 'All' || item.category === filter
   );
 
   const [loadedItems, setLoadedItems] = useState<Record<string, boolean>>({});
@@ -131,12 +137,18 @@ export default function Gallery() {
     };
   }, [filteredItems]);
 
-  const handleRequest = (item: GalleryItem) => {
+  const handleRequest = (item: GalleryItem): void => {
     setInquiryItem(item);
     setFormData({ name: '', phone: '', notes: '' });
   };
 
-  const handleModalSubmit = (e: React.FormEvent) => {
+  const handleFieldChange = (field: keyof typeof formData) => (
+    e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>
+  ): void => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleModalSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     if (!inquiryItem) return;
 
@@ -260,7 +272,7 @@ Custom Dimensions/Notes: ${formData.notes}`;
                       type="text" 
                       required
                       value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={handleFieldChange('name')}
                       className="w-full bg-transparent border-b border-[#F9F6F0]/30 text-[#F9F6F0] px-0 py-2 text-sm focus:outline-none focus:border-[#F9F6F0]/20 transition-colors placeholder:text-[#F9F6F0]/20"
                       placeholder="Your full name"
                     />
@@ -272,7 +284,7 @@ Custom Dimensions/Notes: ${formData.notes}`;
                       type="tel" 
                       required
                       value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={handleFieldChange('phone')}
                       className="w-full bg-transparent border-b border-[#F9F6F0]/30 text-[#F9F6F0] px-0 py-2 text-sm focus:outline-none focus:border-[#F9F6F0]/20 transition-colors placeholder:text-[#F9F6F0]/20"
                       placeholder="Your phone number"
                     />
@@ -283,7 +295,7 @@ Custom Dimensions/Notes: ${formData.notes}`;
                     <textarea 
                       required
                       value={formData.notes}
-                      onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                      onChange={handleFieldChange('notes')}
                       rows={3}
                       className="w-full bg-transparent border-b border-[#F9F6F0]/30 text-[#F9F6F0] px-0 py-2 text-sm focus:outline-none focus:border-[#F9F6F0]/20 transition-colors placeholder:text-[#F9F6F0]/20 resize-none"
                       placeholder="Any specific requests?"
