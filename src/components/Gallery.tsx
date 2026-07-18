@@ -38,7 +38,10 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
       className="group flex flex-col"
     >
       <div className="w-full aspect-[4/3] relative overflow-hidden rounded-lg mb-5 bg-stone-900">
-        <picture>
+        {/* Solid dark skeleton background while the image loads */}
+        <div className="absolute inset-0 bg-stone-900" />
+
+        <picture className="absolute inset-0 z-20">
           <source srcSet={webpSrcSet} type="image/webp" sizes={sizes} />
           <img
             src={item.imageUrl}
@@ -50,17 +53,13 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
             fetchPriority={isPriority ? 'high' : (isLoaded ? 'low' : 'auto')}
             srcSet={fallbackSrcSet}
             sizes={sizes}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ opacity: isLoaded ? 1 : 0 }}
+            className={`absolute inset-0 w-full h-full object-cover ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={onLoad}
           />
         </picture>
 
-        {/* Solid dark skeleton behind the image, no opacity looping */}
-        <div className="absolute inset-0 z-10 bg-stone-900 animate-pulse" />
-
-        {/* subtle decorative overlay that responds to hover */}
-        <div className="absolute inset-0 bg-[#151312]/10 group-hover:bg-transparent transition-colors duration-500 z-20 pointer-events-none" />
+        {/* subtle decorative overlay on top of the loaded image */}
+        <div className="absolute inset-0 bg-[#151312]/10 group-hover:bg-transparent transition-colors duration-500 z-30 pointer-events-none" />
       </div>
       
       <div className="flex flex-col flex-1 px-2">
