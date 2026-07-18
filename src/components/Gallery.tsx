@@ -17,8 +17,7 @@ const items: GalleryItem[] = [
 
 const categories = ['All', 'TV Stands & Consoles', 'Tables', 'Shelving & Storage'];
 
-const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryItem) => void, index: number }> = ({ item, handleRequest, index }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
+const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryItem) => void, index: number, isLoaded: boolean, onLoad: () => void }> = ({ item, handleRequest, index, isLoaded, onLoad }) => {
   const isPriority = index < 2; // first two cards are above the fold
 
   // responsive srcset based on a filename convention (image-400.webp, image-800.webp, ...)
@@ -38,7 +37,7 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="group flex flex-col"
     >
-      <div className={`w-full aspect-[4/3] relative overflow-hidden rounded-lg mb-5`}>
+      <div className="w-full aspect-[4/3] relative overflow-hidden rounded-lg mb-5 bg-stone-900">
         <picture>
           <source srcSet={webpSrcSet} type="image/webp" sizes={sizes} />
           <img
@@ -51,13 +50,14 @@ const GalleryCard: React.FC<{ item: GalleryItem, handleRequest: (item: GalleryIt
             fetchPriority={isPriority ? 'high' : (isLoaded ? 'low' : 'auto')}
             srcSet={fallbackSrcSet}
             sizes={sizes}
-            className={`w-full h-full object-cover transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-            onLoad={() => setIsLoaded(true)}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ opacity: isLoaded ? 1 : 0 }}
+            onLoad={onLoad}
           />
         </picture>
 
-        {/* LQIP / skeleton overlay that matches the card aspect and pulses until image loads */}
-        <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${isLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'} animate-pulse bg-stone-900`} />
+        {/* Solid dark skeleton behind the image, no opacity looping */}
+        <div className="absolute inset-0 z-10 bg-stone-900 animate-pulse" />
 
         {/* subtle decorative overlay that responds to hover */}
         <div className="absolute inset-0 bg-[#151312]/10 group-hover:bg-transparent transition-colors duration-500 z-20 pointer-events-none" />
@@ -99,11 +99,18 @@ export default function Gallery() {
     (item) => filter === 'All' || item.category === filter
   );
 
+  const [loadedItems, setLoadedItems] = useState<Record<string, boolean>>({});
+
+  const handleImageLoad = (id: string) => {
+    setLoadedItems((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+  };
+
+  const isItemLoaded = (id: string) => !!loadedItems[id];
+
   // Preload the first two above-the-fold images to improve first paint
   useEffect(() => {
     const preloads: HTMLLinkElement[] = [];
     filteredItems.slice(0, 2).forEach((it) => {
-      // try a webp variant first (harmless if it 404s) then the original
       const webpHref = it.imageUrl.replace(/\.(png|jpe?g)$/i, '.webp');
       const l1 = document.createElement('link');
       l1.rel = 'preload';
@@ -195,7 +202,14 @@ Custom Dimensions/Notes: ${formData.notes}`;
       >
         <AnimatePresence mode="popLayout">
           {filteredItems.map((item, idx) => (
-            <GalleryCard key={item.id} item={item} handleRequest={handleRequest} index={idx} />
+            <GalleryCard
+              key={item.id}
+              item={item}
+              handleRequest={handleRequest}
+              index={idx}
+              isLoaded={isItemLoaded(item.id)}
+              onLoad={() => handleImageLoad(item.id)}
+            />
           ))}
         </AnimatePresence>
       </motion.div>
